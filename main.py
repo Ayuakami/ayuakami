@@ -11,15 +11,17 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# IDs anpassen
-GUILD_ID = 1097114132681064549
-VOICE_CHANNEL_ID = 1097117503978754098
-TEXT_CHANNEL_ID = 1223975241756442655
+# 🔧 IDs anpassen
+GUILD_ID = 123456789012345678         # Deine Server-ID
+VOICE_CHANNEL_ID = 234567890123456789 # Voice-Channel-ID
+TEXT_CHANNEL_ID = 345678901234567890  # Text-Channel-ID
 
+# Anmeldeliste
 angemeldete = set()
 MAX_ANMELDUNGEN = 10
 
 def anmeldung_offen():
+    """Nur zwischen xx:30 und xx:45 ist Anmeldung erlaubt."""
     now = datetime.datetime.now()
     return 30 <= now.minute < 45
 
@@ -106,6 +108,7 @@ async def timed_task():
 
         current_minute = datetime.datetime.now().minute
 
+        # xx:20 Uhr → Leute aus Voice-Channel entfernen
         if current_minute == 20:
             guild = bot.get_guild(GUILD_ID)
             for user_id in list(angemeldete):
@@ -117,6 +120,7 @@ async def timed_task():
                         pass
             print("🔁 Alle User wurden um xx:20 aus dem Voice-Channel entfernt.")
 
+        # xx:30 Uhr → Neue Anmeldung posten + Liste leeren
         elif current_minute == 30:
             angemeldete.clear()
             await send_40er_message()
@@ -130,7 +134,7 @@ async def test(ctx):
     await send_40er_message()
     await ctx.send("✅ Testnachricht gesendet.")
 
-# Webserver-Handler
+# Webserver für UptimeRobot:
 async def handle(request):
     return web.Response(text="Bot läuft!")
 
@@ -143,12 +147,11 @@ async def start_webserver():
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
-    print(f"🌐 Webserver läuft auf Port {port}")
 
 @bot.event
 async def on_ready():
     print(f"✅ Bot ist online als {bot.user}")
     bot.loop.create_task(timed_task())
-    bot.loop.create_task(start_webserver())  # Hier im Event-Loop starten
+    bot.loop.create_task(start_webserver())
 
-bot.run(os.getenv("TOKEN"))
+bot.run(os.getenv("BOT_TOKEN"))
